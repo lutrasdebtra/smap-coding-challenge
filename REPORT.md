@@ -35,8 +35,6 @@ is instead the same id as found in the `data\user_data.csv` file. This is done s
 using this id scheme is more seemless. However, it does create the assumption that these ids are checked for uniqueness 
 elsewhere, which may not always be desirable. 
 
-Models were also moved into a `models` folder, and into individual files, for better separation of concerns. 
-
 #### Other Possible Options
 
 One different way to store this data is as a single field, with a serialized array or hash holding the consumption 
@@ -48,3 +46,24 @@ Another possibility is to remove the TimePointAggregateData table, and instead g
 Django's aggregation methods. The advantage of this is that every time new datapoints are added, their isn't a table 
 where every entry must be updated, at the cost of some additional overhead. This approach wasn't chosen, because in the 
 challenge importation only happens once, and as such the table only needs to be built a single time.  
+
+A final suggestion would be for the ConsumptionTimePoints table to have unique time_point fields, and a serialized hash 
+of user measurements. Like above the same pros and cons apply, and this would only be useful if the only way this 
+information was accessed is via the time_points themselves. Since this is not the case, this ideal was shelved.   
+
+### Import Method Design
+
+To add data to the database, an `import` command must be created that handles all the data in the `data` folder. 
+
+The `user_data.csv` file contains information related to the UserData table, and can be translated in a one-to-one 
+fashion.
+
+In the `consumption` folder, each file relates to a UserData entry, and is a list of datetime objects, and corresponding 
+consumption floats. These can be directly added to the ConsumptionTimePoints table, with the additional task of tying 
+them to the correct UserData entry. 
+
+Finally, TimePointAggregateData can be filled in one of two ways:
+1. Incrementally as ConsumptionTimePoints are added.
+2. At the end of the import process by using Django's aggregate methods to create the information. 
+
+Here, 2. is the clear winner: it uses less code, and has less database reads and writes. 

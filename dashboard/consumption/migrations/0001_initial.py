@@ -17,7 +17,7 @@ class Migration(migrations.Migration):
             name='ConsumptionTimePoint',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('date_time', models.DateTimeField()),
+                ('time_point', models.DateTimeField()),
                 ('consumption', models.FloatField()),
             ],
         ),
