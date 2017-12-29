@@ -1,7 +1,13 @@
+import os
 from datetime import datetime
 
+import pytz
+from django.core.management import call_command
 from django.test import TestCase
+from django.utils.six import StringIO
+from django.utils.timezone import make_aware
 
+import dashboard
 from .models import *
 
 
@@ -10,9 +16,34 @@ class Tests(TestCase):
         """ Tests model association loading. """
         user_data_object = UserData.objects.create(id=1, area="a1", tariff="t1")
         user_data_object.save()
-        consumption_time_point_object = ConsumptionTimePoint.objects.create(time_point=datetime.now(),
+        consumption_time_point_object = ConsumptionTimePoint.objects.create(time_point=make_aware(datetime.now(),
+                                                                                                  pytz.UTC),
                                                                             consumption=20.0,
                                                                             user_data=user_data_object)
         consumption_time_point_object.save()
         self.assertIsNotNone(consumption_time_point_object.user_data)
-        self.assertEquals(1, len(user_data_object.consumptiontimepoint_set.all()))
+        self.assertEquals(1, user_data_object.consumptiontimepoint_set.all().count())
+
+    def test_import_method(self):
+        """ Various assertions to check import method works correctly. """
+        data_dir = os.path.abspath(os.path.join(dashboard.__path__[0], "../../test_data"))
+        out = StringIO()
+        args = []
+        options = {'user_data_loc': os.path.join(data_dir, "user_data.csv"),
+                   'user_consumption_loc': os.path.join(data_dir, "consumption")}
+        call_command('import', *args, **options, stdout=out)
+
+        self.assertEquals(UserData.objects.all().count(), 3)
+        self.assertEquals(ConsumptionTimePoint.objects.all().count(), 9)
+        self.assertEquals(TimePointAggregateData.objects.all().count(), 3)
+        self.assertIn("Import completed.", out.getvalue())
+
+        # Check append a doesn't add additional objects that already exist.
+        options['append'] = True
+        out.flush()
+        call_command('import', *args, **options, stdout=out)
+
+        self.assertEquals(UserData.objects.all().count(), 3)
+        self.assertEquals(ConsumptionTimePoint.objects.all().count(), 9)
+        self.assertEquals(TimePointAggregateData.objects.all().count(), 3)
+        self.assertIn("Import completed.", out.getvalue())

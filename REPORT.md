@@ -8,7 +8,7 @@
 For the coding challenge, the underlying data is cleanly divided into users, and their corresponding consumption time 
 points.
 
-Therefore, the simpliest model design is as follows:
+Therefore, the simplest model design is as follows:
 
 - UserData:
     - id:IntegerField

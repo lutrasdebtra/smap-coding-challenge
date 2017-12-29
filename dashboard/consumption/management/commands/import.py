@@ -49,10 +49,10 @@ class Command(BaseCommand):
         user_consumption_loc = options['user_consumption_loc']
         # Check arguments:
         if not os.path.isfile(user_data_loc):
-            print("'{}' is not a valid file path.".format(user_data_loc))
+            self.stdout.write("'{}' is not a valid file path.".format(user_data_loc))
             return
         if not os.path.exists(user_consumption_loc):
-            print("'{}' is not a valid path.".format(user_consumption_loc))
+            self.stdout.write("'{}' is not a valid path.".format(user_consumption_loc))
             return
 
         # Delete objects if not appending.
@@ -62,6 +62,8 @@ class Command(BaseCommand):
         user_data_objects = self.handle_user_data(user_data_loc)
         self.handle_consumption_data(user_consumption_loc, user_data_objects)
         self.create_time_point_aggregate_data()
+
+        self.stdout.write("Import completed.")
 
     def handle_user_data(self, user_data_loc):
         """ Handled user_data.csv and UserData model. """
@@ -73,12 +75,13 @@ class Command(BaseCommand):
             # Check header is correct.
             header = next(reader)
             if header != expected_header:
-                print("'{}' has a malformed header, the header must be: {}".format(
+                self.stdout.write("'{}' has a malformed header, the header must be: {}".format(
                     user_data_loc, ','.join(expected_header)))
                 return
             for row in reader:
                 if not UserData.objects.filter(id=row[0]).exists():
-                    print("Creating UserData Object: id = {}, area = {}, tariff = {}".format(row[0], row[1], row[2]))
+                    self.stdout.write(
+                        "Creating UserData Object: id = {}, area = {}, tariff = {}".format(row[0], row[1], row[2]))
                     user_data_objects[row[0]] = UserData.objects.create(id=row[0], area=row[1], tariff=row[2])
                 else:
                     user_data_objects[row[0]] = UserData.objects.get(id=row[0])
@@ -100,14 +103,15 @@ class Command(BaseCommand):
                 if user_data_id in user_data_objects:
                     user_data_object = user_data_objects[user_data_id]
                 else:
-                    print("UserData object with id: {}, not found, skipping file: {}.".format(user_data_id, filename))
+                    self.stdout.write(
+                        "UserData object with id: {}, not found, skipping file: {}.".format(user_data_id, filename))
                     continue
                 with open(full_file_path, newline='') as csvfile:
                     reader = csv.reader(csvfile, delimiter=',', quotechar='|')
                     # Check header is correct.
                     header = next(reader)
                     if header != expected_header:
-                        print("'{}' has a malformed header, the header must be: {}, skipping file.".format(
+                        self.stdout.write("'{}' has a malformed header, the header must be: {}, skipping file.".format(
                             full_file_path, ','.join(expected_header)))
                         continue
                     for row in reader:
@@ -117,26 +121,24 @@ class Command(BaseCommand):
                             consumption_time_point_objects.append(
                                 ConsumptionTimePoint(time_point=date_time_with_timezone, consumption=row[1],
                                                      user_data=user_data_object))
-                    print("Creating ConsumptionTimePoint Objects for UserData id = {}".format(user_data_id))
-        print("Committing ConsumptionTimePoint Objects to database.")
+                    self.stdout.write("Creating ConsumptionTimePoint Objects for UserData id = {}".format(user_data_id))
+        self.stdout.write("Committing ConsumptionTimePoint Objects to database.")
         # Bulk create at end for speed.
         ConsumptionTimePoint.objects.bulk_create(consumption_time_point_objects)
 
     def create_time_point_aggregate_data(self):
         """ Creates average and total information for each distinct time point. """
-        print("Creating TimePointAggregateData values.")
+        # Regardless of whether --append is used, these values should be recalcuated.
+        TimePointAggregateData.objects.all().delete()
+        self.stdout.write("Creating TimePointAggregateData values.")
         data = ConsumptionTimePoint.objects.values('time_point').annotate(total=Sum('consumption'),
                                                                           average=Avg('consumption'))
-        data_list = []
-        for q in data:
-            data_list.append(TimePointAggregateData(time_point=q['time_point'], total=q['total'], average=q['average']))
-        print("Committing TimePointAggregateData Objects to database.")
-        TimePointAggregateData.objects.bulk_create(data_list)
+        self.stdout.write("Committing TimePointAggregateData Objects to database.")
+        TimePointAggregateData.objects.bulk_create([TimePointAggregateData(**q) for q in data])
 
-    @staticmethod
-    def rollback():
+    def rollback(self):
         """ Removes objects from all tables. """
-        print("Deleting previously imported objects.")
+        self.stdout.write("Deleting previously imported objects.")
         UserData.objects.all().delete()
         ConsumptionTimePoint.objects.all().delete()
         TimePointAggregateData.objects.all().delete()
