@@ -3,6 +3,16 @@
 {% block content %}
 {{ block.super }}
 <div class="row">
+    <div class="col mt-0">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'summary' %}">Summary</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Detail: {{ user_data.id }}</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+<div class="row">
     <div class="col">
         <div id="chart_user_div" style="width: 100%; height: 500px"></div>
     </div>
