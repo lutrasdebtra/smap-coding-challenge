@@ -1,5 +1,75 @@
 {% extends 'consumption/layout.html' %}
 
 {% block content %}
-
+{{ block.super }}
+<div class="row">
+    <div class="col">
+        <div id="chart_user_div" style="width: 100%; height: 500px"></div>
+    </div>
+</div>
+<div class="row">
+    <div class="col">
+        <hr/>
+    </div>
+</div>
+<div class="row justify-content-center">
+    <div class="col col-md-10 mb-3">
+        <table class="table" id="detail_table">
+            <thead class="thead-light">
+            <tr>
+                <th scope="col">Time Point</th>
+                <th scope="col">Consumption</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for time_point in time_points_non_json %}
+            <tr>
+                <th scope="row">{{ time_point.time_point }}</th>
+                <td>{{ time_point.consumption }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
 {% endblock %}
+
+{% block javascripts %}
+{{ block.super }}
+<script type="text/javascript">
+    var data_json = JSON.parse('{{time_points}}'.replace(/&quot;/g, '"'));
+    var average_data = data_json.map(function (currentObject) {
+        return [new Date(currentObject[0]), currentObject[1]];
+    });
+
+    google.charts.load('current', {'packages': ['corechart']});
+    google.charts.setOnLoadCallback(drawUserSummaryChart);
+
+    function drawUserSummaryChart() {
+        var data = new google.visualization.DataTable();
+        data.addColumn('date', 'Time Point');
+        data.addColumn('number', 'Total');
+        data.addRows(average_data);
+
+        var options = {
+            title: 'Total User Midday Consumption',
+            legend: {position: 'bottom'},
+            curveType: 'function',
+            colors: ['#DC3912'],
+            vAxis: {
+                viewWindow: {
+                    min: 0
+                }
+            }
+        };
+
+        var chart = new google.visualization.LineChart(document.getElementById('chart_user_div'));
+        chart.draw(data, options);
+    }
+
+    $(document).ready(function () {
+        $('#detail_table').DataTable();
+    });
+
+</script>
+{% endblock javascripts %}
