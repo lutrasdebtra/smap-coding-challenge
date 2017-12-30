@@ -60,10 +60,11 @@ class Command(BaseCommand):
             self.rollback()
 
         user_data_objects = self.handle_user_data(user_data_loc)
-        self.handle_consumption_data(user_consumption_loc, user_data_objects)
-        self.create_time_point_aggregate_data()
+        if user_data_objects:
+            self.handle_consumption_data(user_consumption_loc, user_data_objects)
+            self.create_time_point_aggregate_data()
 
-        self.stdout.write("Import completed.")
+            self.stdout.write("Import completed.")
 
     def handle_user_data(self, user_data_loc):
         """ Handled user_data.csv and UserData model. """
@@ -77,7 +78,7 @@ class Command(BaseCommand):
             if header != expected_header:
                 self.stdout.write("'{}' has a malformed header, the header must be: {}".format(
                     user_data_loc, ','.join(expected_header)))
-                return
+                return user_data_objects
             for row in reader:
                 if not UserData.objects.filter(id=row[0]).exists():
                     self.stdout.write(

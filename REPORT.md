@@ -71,4 +71,70 @@ Here, 2. is the clear winner: it uses less code, and has less database reads and
 To make the method more flexible, the following options were also added:
 1. `--user_data` - Location of the `user_data.csv` file. Defaults to `data/user_data.csv`.
 2. `--user_consumption` - Location of the `consumption` folder. Defaults to `data/consumption`.
-3. `--append` - If set, the database isn't wiped before import. Default is false.  
+3. `--append` - If set, the database isn't wiped before import. Default is false.
+
+### View Design
+
+Both the Summary and Detail views follow a similar format; a chart followed by a table. So the views are built to 
+produce two sets of data.
+
+The chart data is JSON formatted in a nested array format for Google Charts to handle correctly. The table information 
+comes directly from Django, and is much simpler.
+
+Because of the prototypical nature of the task, not all the time point information was used, as passing all the data to 
+a Javascript library was too much of a burden. Instead, only the 12pm points were picked to represent each day. Ideally, 
+days should have been averaged reduce the size of the data, but single point selection gives a fairly indicative idea of 
+overall data trends. 
+
+### Template Design
+
+#### Third Party Libraries
+
+1. [Bootstrap v4](https://getbootstrap.com/) - This library was used to quickly create a frontend, that was modern, 
+if a bit utilitarian. It also allows for quickly creating multiple versions for different resolutions - so that the 
+prototype can be ported to mobile if desired.   
+2. [Datatables](https://datatables.net/) - Datatables is a JS library which can be used to quickly add client-side 
+searching, sorting, and pagination to any table. Above ~700 entries, server-side implementations should be used, as lag 
+begins to appear. The library also has default CSS for Bootstrap, making styling tables very easy. 
+3. [Google Charts](https://developers.google.com/chart/) - GCharts is a very extensive JS charting library. While in its 
+basic form its not always the most performant (compared to say Highchart or Ploty), but for our purposes it works reasonably 
+well. 
+
+##### Use of CDNs in the Coding Challenge
+
+Instead of electing to setup a proper static file management system, CDNs were used. While it's often better practice to 
+have local static files, or setup something like Webpack, for smaller tasks CDNs work fairly well. Additionally, there 
+is often significant time commitment in setting up bundlers for projects, especially if they haven't been used on a 
+development machine before (such as this one). 
+
+#### General Design Considerations
+
+The templates use the standard `layout` extending to a child template. Where the `layout` template contains shared CSS, 
+JS and HTML for every other page. In our case, this is a jumbotron header. 
+
+From here, both the summary and detail pages follow a similar format. Because of this there is some level of code 
+duplication between the two templates, and while some of the logic could have been extracted out to sub-templates, the 
+additional work required, as well as the increased fragmentation of the code made this undesirable. 
+
+One caveat that appears in both of the templates is the use of `<script>` tags to run the GCharts. These should 
+have been ideally extracted out to separate JS files. An even better solution would have been to have a single JS file, 
+which dynamically handles creation of both based on input arguments. Ultimately, the work required to do these tasks 
+didn't seem reasonable given the pay-off. With larger more complex templates this would have been very important, but 
+because the system is so simple, adding additional complexity is unnecessary. 
+
+### Testing
+
+Testing in the challenge is actually incredibly sparse. The first test class confirms that the models have been setup 
+correctly, and that objects can be added and retrieved. 
+
+The `ImportTests` class then goes through a number of options for the `import` command, making sure that all options and 
+checks are coded correctly. All of these tests are functional in nature, and don't break down the command into its unit 
+parts. While this would have been better practice, the function itself is fairly small, and the functional tests provide 
+excellent coverage. 
+
+Both the views and templates are incredibly simple, and are easily verified by glancing at the respective webpages. The 
+data transformation sections of the views could have been tested, but any failures would have been immediately picked up 
+due to the the failure of GCharts to load them correctly. 
+
+If the templates had been more interactive, and contained more than a single user path, a tool like Selenium could be 
+used to track down any front-end bugs.     

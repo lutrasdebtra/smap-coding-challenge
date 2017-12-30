@@ -61,11 +61,11 @@
     function drawAverageSummaryChart() {
         var data = new google.visualization.DataTable();
         data.addColumn('date', 'Time Point');
-        data.addColumn('number', 'Average');
+        data.addColumn('number', 'Average (Wh)');
         data.addRows(average_data);
 
         var options = {
-            title: 'Average Daily Consumption at Midday',
+            title: 'Average Daily Consumption (Wh) at Midday',
             legend: {position: 'bottom'},
             curveType: 'function',
             colors: ['#DC3912']
