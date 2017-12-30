@@ -24,7 +24,7 @@
 </div>
 <div class="row justify-content-center">
     <div class="col col-md-10 mb-3">
-        <table class="table" id="detail_table">
+        <table class="table  data_tables">
             <thead class="thead-light">
             <tr>
                 <th scope="col">Time Point</th>
@@ -76,10 +76,5 @@
         var chart = new google.visualization.LineChart(document.getElementById('chart_user_div'));
         chart.draw(data, options);
     }
-
-    $(document).ready(function () {
-        $('#detail_table').DataTable();
-    });
-
 </script>
 {% endblock javascripts %}
