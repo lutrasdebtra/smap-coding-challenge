@@ -49,7 +49,7 @@ challenge importation only happens once, and as such the table only needs to be 
 
 A final suggestion would be for the ConsumptionTimePoints table to have unique time_point fields, and a serialized hash 
 of user measurements. Like above the same pros and cons apply, and this would only be useful if the only way this 
-information was accessed is via the time_points themselves. Since this is not the case, this ideal was shelved.   
+information was accessed is via the time_points themselves. Since this is not the case, this idea was shelved.   
 
 ### Import Method Design
 
@@ -66,4 +66,9 @@ Finally, TimePointAggregateData can be filled in one of two ways:
 1. Incrementally as ConsumptionTimePoints are added.
 2. At the end of the import process by using Django's aggregate methods to create the information. 
 
-Here, 2. is the clear winner: it uses less code, and has less database reads and writes. 
+Here, 2. is the clear winner: it uses less code, and has less database reads and writes.
+
+To make the method more flexible, the following options were also added:
+1. `--user_data` - Location of the `user_data.csv` file. Defaults to `data/user_data.csv`.
+2. `--user_consumption` - Location of the `consumption` folder. Defaults to `data/consumption`.
+3. `--append` - If set, the database isn't wiped before import. Default is false.  
